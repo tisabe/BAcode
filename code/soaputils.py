@@ -64,16 +64,27 @@ def show_res(atoms_obj, pos, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5
     p.matshow(mat)
     view(atoms)
     
-def lim_overlap(atoms_obj):
+def lim_overlap(atoms_obj, dmin=1.1):
+    # tries to make atoms in the cell not overlap, by assigning new random position of atom inside cell. Minimum distance between atompairs is dmin
     obj = atoms_obj.copy()
     overlap = True
-    cell = atoms.get_cell()
-    N = len(obj.get_atomic_numbers())
-    while(overlap):
+    cell = obj.get_cell()
+    it = 0
+    #N = len(obj.get_atomic_numbers())
+    while(overlap and it < 1000):
         dist = obj.get_all_distances(mic=True)
-        dist = np.fill_diagonal(dist,10000.0)
-        index = np.argmin(dist)
-        overlap = False
-        
+        #print(obj)
+        np.fill_diagonal(dist,10.0)
+        print(np.amin(dist))
+        if np.amin(dist) > dmin:
+            overlap = False
+        else:
+            index = np.unravel_index(np.argmin(dist), np.shape(dist))[0]
+            pos = obj.get_positions()
+            shape = pos.shape
+            ran_pos = np.random.random_sample(shape)
+            pos[index] = np.matmul(cell,ran_pos[index])
+            obj.set_positions(pos)
+            it = it + 1
     return obj
     
