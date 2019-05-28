@@ -3,7 +3,7 @@ import soaplite
 import genBasis
 import ase
 import matplotlib.pyplot as p
-from numpy.linalg import norm
+from numpy.linalg import norm, svd
 from ase.visualize import view
 
 
@@ -51,6 +51,22 @@ def soap_norm(pos, atoms_obj, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=
         print(norm(mat)) # can be used to show progress, but slows down function calls somewhat
     return norm(mat)
 
+def svd_l2(pos, atoms_obj, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5, periodic=False, showProgress=False):
+    # calculates and returns norm of singular-value-vector of SOAP-matrix, works similar so soap_norm
+    if myAlphas == 0 or myBetas == 0:
+        myAlphas, myBetas = genBasis.getBasisFunc(rCut, NradBas)
+    pos_ini = atoms_obj.get_positions()
+    pos = np.reshape(pos, pos_ini.shape)
+    atoms_obj.set_positions(pos)
+    if periodic:
+        mat = soaplite.get_periodic_soap_structure(atoms_obj, myAlphas, myBetas, rCut, NradBas, Lmax)
+    else:
+        mat = soaplite.get_soap_structure(atoms_obj, myAlphas, myBetas, rCut, NradBas, Lmax)
+    s = svd(mat.transpose(), full_matrices=False, compute_uv=False)
+    if showProgress:    
+        print(norm(s)) # can be used to show progress, but slows down function calls somewhat
+    return  norm(s)
+
 def show_res(atoms_obj, pos, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5):
     # shows the result of the minimization in form of the view from ase
     if myAlphas == 0 or myBetas == 0:
@@ -75,7 +91,7 @@ def lim_overlap(atoms_obj, dmin=1.1):
         dist = obj.get_all_distances(mic=True)
         #print(obj)
         np.fill_diagonal(dist,10.0)
-        print(np.amin(dist))
+        #print(np.amin(dist))
         if np.amin(dist) > dmin:
             overlap = False
         else:
@@ -87,4 +103,5 @@ def lim_overlap(atoms_obj, dmin=1.1):
             obj.set_positions(pos)
             it = it + 1
     return obj
+
     
