@@ -35,15 +35,15 @@ def limit_pos(atoms): # funtion to delete atoms outside of unit cell, only works
             i = i + 1
     return atoms
 
-def soap_norm(pos, atoms_obj, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5, periodic=False, showProgress=False):
+def soap_norm(pos, atoms_obj, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5, pbc=False, showProgress=False):
     # calculates the matrix-norm of the SOAP-matrix from a (flattened) positions-array and an atoms object.
     # SOAP basisfunctions have to be calculated beforehand and parsed to the function, rCut, NradBas and Lmax may also be parsed
-    if myAlphas == 0 or myBetas == 0:
+    if myAlphas.all() == 0 or myBetas.all() == 0:
         myAlphas, myBetas = genBasis.getBasisFunc(rCut, NradBas)
     pos_ini = atoms_obj.get_positions()
     pos = np.reshape(pos, pos_ini.shape)
     atoms_obj.set_positions(pos)
-    if periodic:
+    if pbc:
         mat = soaplite.get_periodic_soap_structure(atoms_obj, myAlphas, myBetas, rCut, NradBas, Lmax)
     else:
         mat = soaplite.get_soap_structure(atoms_obj, myAlphas, myBetas, rCut, NradBas, Lmax)
@@ -51,33 +51,42 @@ def soap_norm(pos, atoms_obj, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=
         print(norm(mat)) # can be used to show progress, but slows down function calls somewhat
     return norm(mat)
 
-def svd_l2(pos, atoms_obj, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5, periodic=False, showProgress=False):
-    # calculates and returns norm of singular-value-vector of SOAP-matrix, works similar so soap_norm
-    if myAlphas == 0 or myBetas == 0:
+def svd_l2(pos, atoms_obj, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5, pbc=False, showProgress=False):
+    # calculates and returns norm of singular-value-vector of SOAP-matrix, works similar to soap_norm
+    if myAlphas.all() == 0 or myBetas.all() == 0:
         myAlphas, myBetas = genBasis.getBasisFunc(rCut, NradBas)
     pos_ini = atoms_obj.get_positions()
     pos = np.reshape(pos, pos_ini.shape)
     atoms_obj.set_positions(pos)
-    if periodic:
+    if pbc:
         mat = soaplite.get_periodic_soap_structure(atoms_obj, myAlphas, myBetas, rCut, NradBas, Lmax)
     else:
         mat = soaplite.get_soap_structure(atoms_obj, myAlphas, myBetas, rCut, NradBas, Lmax)
     s = svd(mat.transpose(), full_matrices=False, compute_uv=False)
     if showProgress:    
-        print(norm(s)) # can be used to show progress, but slows down function calls somewhat
-    return  norm(s)
+        print(norm(s, ord=1)) # can be used to show progress, but slows down function calls somewhat
+    return  norm(s, ord=1)
 
-def show_res(atoms_obj, pos, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5):
+def show_res(atoms_obj, pos, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5, pbc=False):
     # shows the result of the minimization in form of the view from ase
-    if myAlphas == 0 or myBetas == 0:
+    if myAlphas.all() == 0 or myBetas.all() == 0:
         myAlphas, myBetas = genBasis.getBasisFunc(rCut, NradBas)
     atoms = atoms_obj.copy()
     pos_ini = atoms.get_positions()
     pos = np.reshape(pos, pos_ini.shape)
     atoms.set_positions(pos)
-    mat = soaplite.get_soap_structure(atoms_obj, myAlphas, myBetas, rCut, NradBas, Lmax)
-    print('Matrix norm: %f' %norm(mat))
-    p.matshow(mat)
+    if pbc:
+        mat = soaplite.get_periodic_soap_structure(atoms_obj, myAlphas, myBetas, rCut, NradBas, Lmax)
+    else:
+        mat = soaplite.get_soap_structure(atoms_obj, myAlphas, myBetas, rCut, NradBas, Lmax)
+    s = svd(mat.transpose(), full_matrices=False, compute_uv=False)
+    #print('Matrix norm: %f' %norm(mat))
+    print('Singular-Value norm: %f' %norm(s, ord=1))
+    #p.matshow(mat)
+    #p.semilogy(s)
+    f, (ax1, ax2) = p.subplots(2, 1)
+    ax1.matshow(mat)
+    ax2.semilogy(s)
     view(atoms)
     
 def lim_overlap(atoms_obj, dmin=1.1):
