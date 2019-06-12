@@ -18,7 +18,8 @@ def rand_pos(atoms_in): # function to randomize atom positions. New positions wi
     atoms.set_positions(pos)
     return atoms
 
-def limit_pos(atoms): # funtion to delete atoms outside of unit cell, only works with orthorhombic cells (for now)
+def limit_pos(atoms_obj): # funtion to delete atoms outside of unit cell, only works with orthorhombic cells (for now)
+    atoms = atoms_obj.copy()
     cell = atoms.get_cell()
     pos = atoms.get_positions()
     N = np.shape(pos)[0]
@@ -51,9 +52,11 @@ def soap_norm(pos, atoms_obj, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=
         print(norm(mat)) # can be used to show progress, but slows down function calls somewhat
     return norm(mat)
 
-def svd_l2(pos, atoms_obj, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5, pbc=False, showProgress=False):
+def svd_lp(pos, atoms_obj, order=2, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5, pbc=False, showProgress=False):
     # calculates and returns norm of singular-value-vector of SOAP-matrix, works similar to soap_norm
-    if myAlphas.all() == 0 or myBetas.all() == 0:
+    # the order of the norm is 2 by default, but can be set in variable 'order'
+    #if myAlphas.all() == 0 or myBetas.all() == 0:
+    if myAlphas.all() or myBetas.all():
         myAlphas, myBetas = genBasis.getBasisFunc(rCut, NradBas)
     pos_ini = atoms_obj.get_positions()
     pos = np.reshape(pos, pos_ini.shape)
@@ -64,12 +67,13 @@ def svd_l2(pos, atoms_obj, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5, 
         mat = soaplite.get_soap_structure(atoms_obj, myAlphas, myBetas, rCut, NradBas, Lmax)
     s = svd(mat.transpose(), full_matrices=False, compute_uv=False)
     if showProgress:    
-        print(norm(s, ord=1)) # can be used to show progress, but slows down function calls somewhat
-    return  norm(s, ord=1)
+        print(norm(s, ord=order)) # can be used to show progress, but slows down function calls somewhat
+    return  norm(s, ord=order)
 
 def show_res(atoms_obj, pos, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5, pbc=False):
     # shows the result of the minimization in form of the view from ase
-    if myAlphas.all() == 0 or myBetas.all() == 0:
+    #if myAlphas.all() == 0 or myBetas.all() == 0:
+    if myAlphas.all() or myBetas.all():
         myAlphas, myBetas = genBasis.getBasisFunc(rCut, NradBas)
     atoms = atoms_obj.copy()
     pos_ini = atoms.get_positions()
