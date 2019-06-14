@@ -70,6 +70,32 @@ def svd_lp(pos, atoms_obj, order=2, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5,
         print(norm(s, ord=order)) # can be used to show progress, but slows down function calls somewhat
     return  norm(s, ord=order)
 
+def norm_block(pos, atoms_obj, order=2, frac=0.3, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5, pbc=False, showProgress=False):
+    # SOAP-matrix is divided into blocks depending on combination of atomic number. The norm of the last rows of the blocks is calculated (fraction of rows is put in with frac, so last 2/3 of rows would be frac = 1/3), rest works similar to soap_norm
+    # the order of the norm is 2 by default, but can be set in variable 'order'
+    #if myAlphas.all() == 0 or myBetas.all() == 0:
+    if myAlphas.all() or myBetas.all():
+        myAlphas, myBetas = genBasis.getBasisFunc(rCut, NradBas)
+    pos_ini = atoms_obj.get_positions()
+    pos = np.reshape(pos, pos_ini.shape)
+    atoms_obj.set_positions(pos)
+    if pbc:
+        mat = soaplite.get_periodic_soap_structure(atoms_obj, myAlphas, myBetas, rCut, NradBas, Lmax)
+    else:
+        mat = soaplite.get_soap_structure(atoms_obj, myAlphas, myBetas, rCut, NradBas, Lmax)
+        
+    symbols = atoms_obj.get_chemical_symbols() # here the blocks are seperated and the 'block norm' is calculated
+    uSym = len(np.unique(symbols))
+    numBlocks = int(uSym*(uSym + 1)/2)
+    rowsBlock = int(np.shape(mat)[1]/numBlocks)
+    mat0 = np.zeros((np.shape(mat)[0],1))
+    for i in np.arange(numBlocks):
+        mat0 = np.append(mat0,mat[:,i*rowsBlock+int(frac*rowsBlock):(i+1)*rowsBlock],axis=1)
+    
+    if showProgress:    
+        print(norm(mat0, ord=order)) # can be used to show progress, but slows down function calls somewhat
+    return  norm(mat0, ord=order)
+
 def show_res(atoms_obj, pos, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5, pbc=False):
     # shows the result of the minimization in form of the view from ase
     #if myAlphas.all() == 0 or myBetas.all() == 0:
@@ -92,6 +118,8 @@ def show_res(atoms_obj, pos, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5
     ax1.matshow(mat)
     ax2.semilogy(s)
     view(atoms)
+    
+
     
 def lim_overlap(atoms_obj, dmin=1.1):
     # tries to make atoms in the cell not overlap, by assigning new random position of atom inside cell. Minimum distance between atompairs is dmin
