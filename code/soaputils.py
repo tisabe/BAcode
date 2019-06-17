@@ -36,7 +36,7 @@ def limit_pos(atoms_obj): # funtion to delete atoms outside of unit cell, only w
             i = i + 1
     return atoms
 
-def soap_norm(pos, atoms_obj, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5, pbc=False, showProgress=False):
+def soap_norm(pos, atoms_obj, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5, pbc=False, maximize=False, showProgress=False):
     # calculates the matrix-norm of the SOAP-matrix from a (flattened) positions-array and an atoms object.
     # SOAP basisfunctions have to be calculated beforehand and parsed to the function, rCut, NradBas and Lmax may also be parsed
     if myAlphas.all() == 0 or myBetas.all() == 0:
@@ -50,8 +50,11 @@ def soap_norm(pos, atoms_obj, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=
         mat = soaplite.get_soap_structure(atoms_obj, myAlphas, myBetas, rCut, NradBas, Lmax)
     if showProgress:    
         print(norm(mat)) # can be used to show progress, but slows down function calls somewhat
-    return norm(mat)
-
+    if maximize:
+        return -norm(mat)
+    else:
+        return norm(mat)
+        
 def svd_lp(pos, atoms_obj, order=2, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5, pbc=False, showProgress=False):
     # calculates and returns norm of singular-value-vector of SOAP-matrix, works similar to soap_norm
     # the order of the norm is 2 by default, but can be set in variable 'order'
@@ -110,8 +113,11 @@ def show_res(atoms_obj, pos, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5
     else:
         mat = soaplite.get_soap_structure(atoms_obj, myAlphas, myBetas, rCut, NradBas, Lmax)
     s = svd(mat.transpose(), full_matrices=False, compute_uv=False)
+    norm_b = norm_block(pos, atoms_obj, 2, 0.3, myAlphas, myBetas, rCut, NradBas, Lmax, pbc)
     #print('Matrix norm: %f' %norm(mat))
     print('Singular-Value norm: %f' %norm(s, ord=1))
+    print('Full Matrix norm: %f' %norm(mat, ord=2))
+    print('Block matrix norm: %f' %norm_b)
     #p.matshow(mat)
     #p.semilogy(s)
     f, (ax1, ax2) = p.subplots(2, 1)
