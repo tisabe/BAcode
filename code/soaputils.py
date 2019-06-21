@@ -5,6 +5,7 @@ import ase
 import matplotlib.pyplot as p
 from numpy.linalg import norm, svd
 from ase.visualize import view
+import scipy.spatial.distance as sd
 
 
 def rand_pos(atoms_in): # function to randomize atom positions. New positions will be inside Unit cell
@@ -54,6 +55,25 @@ def soap_norm(pos, atoms_obj, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=
         return -norm(mat)
     else:
         return norm(mat)
+    
+def soap_norm_LJ(pos, atoms_obj, sigma=2, eps=1 ,myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5, pbc=False, maximize=False, showProgress=False):
+    # calculates the matrix-norm of the SOAP-matrix from a (flattened) positions-array and an atoms object.
+    # SOAP basisfunctions have to be calculated beforehand and parsed to the function, rCut, NradBas and Lmax may also be parsed
+    if myAlphas.all() == 0 or myBetas.all() == 0:
+        myAlphas, myBetas = genBasis.getBasisFunc(rCut, NradBas)
+    pos_ini = atoms_obj.get_positions()
+    pos = np.reshape(pos, pos_ini.shape)
+    atoms_obj.set_positions(pos)
+    if pbc:
+        mat = soaplite.get_periodic_soap_structure(atoms_obj, myAlphas, myBetas, rCut, NradBas, Lmax)
+    else:
+        mat = soaplite.get_soap_structure(atoms_obj, myAlphas, myBetas, rCut, NradBas, Lmax)
+    if showProgress:    
+        print(norm(mat)+cost_LJ(atoms_obj, sigma, eps)) # can be used to show progress, but slows down function calls somewhat
+    if maximize:
+        return -norm(mat)+cost_LJ(atoms_obj, sigma, eps)
+    else:
+        return norm(mat)+cost_LJ(atoms_obj, sigma, eps)
         
 def svd_lp(pos, atoms_obj, order=2, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5, pbc=False, showProgress=False):
     # calculates and returns norm of singular-value-vector of SOAP-matrix, works similar to soap_norm
@@ -99,7 +119,7 @@ def norm_block(pos, atoms_obj, order=2, frac=0.3, myAlphas=0, myBetas=0, rCut=10
         print(norm(mat0, ord=order)) # can be used to show progress, but slows down function calls somewhat
     return  norm(mat0, ord=order)
 
-def show_res(atoms_obj, pos, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5, pbc=False):
+def show_res(atoms_obj, pos, sigma=1, eps=1, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5, pbc=False):
     # shows the result of the minimization in form of the view from ase
     #if myAlphas.all() == 0 or myBetas.all() == 0:
     if myAlphas.all() or myBetas.all():
@@ -118,6 +138,7 @@ def show_res(atoms_obj, pos, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5
     print('Singular-Value norm: %f' %norm(s, ord=1))
     print('Full Matrix norm: %f' %norm(mat, ord=2))
     print('Block matrix norm: %f' %norm_b)
+    print('LJ-Cost: %f' %cost_LJ(atoms, sigma, eps))
     #p.matshow(mat)
     #p.semilogy(s)
     f, (ax1, ax2) = p.subplots(2, 1)
@@ -151,4 +172,22 @@ def lim_overlap(atoms_obj, dmin=1.1):
             it = it + 1
     return obj
 
+def cost_LJ(atoms, sigma, eps):
+    arr = atoms.get_positions()
+    r = sd.pdist(arr)/sigma
+    np.power(r, -6, out=r)
+    return np.sum(r**2 - r)*4*eps
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
