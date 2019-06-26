@@ -8,10 +8,11 @@ from ase.visualize import view
 import scipy.spatial.distance as sd
 
 
-def rand_pos(atoms_in): # function to randomize atom positions. New positions will be inside Unit cell
+def rand_pos(atoms_in, seed=None): # function to randomize atom positions. New positions will be inside Unit cell
     atoms = atoms_in.copy()
     pos = atoms.get_positions()
     shape = pos.shape
+    np.random.seed(seed)
     ran_pos = np.random.random_sample(shape)
     cell = atoms.get_cell()
     for i in np.arange(shape[0]):
@@ -135,6 +136,12 @@ def show_res(atoms_obj, pos, sigma=1, eps=1, myAlphas=0, myBetas=0, rCut=10.0, N
     s = svd(mat.transpose(), full_matrices=False, compute_uv=False)
     norm_b = norm_block(pos, atoms_obj, 2, 0.3, myAlphas, myBetas, rCut, NradBas, Lmax, pbc)
     #print('Matrix norm: %f' %norm(mat))
+    N = len(atoms.get_positions())*3
+    print('Number of Atoms: %i' %(N/3))
+    dist = atoms_test.get_all_distances(mic=pbc)
+    np.fill_diagonal(dist,10.0)
+    amin = np.amin(dist)
+    print('Minimal pair-distance: %f' %amin)
     print('Singular-Value norm: %f' %norm(s, ord=1))
     print('Full Matrix norm: %f' %norm(mat, ord=2))
     print('Block matrix norm: %f' %norm_b)
@@ -145,6 +152,7 @@ def show_res(atoms_obj, pos, sigma=1, eps=1, myAlphas=0, myBetas=0, rCut=10.0, N
     ax1.matshow(mat)
     ax2.semilogy(s)
     view(atoms)
+    return(norm(mat, ord=2), ost_LJ(atoms, sigma, eps))
     
 
     
