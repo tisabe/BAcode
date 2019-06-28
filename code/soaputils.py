@@ -65,16 +65,17 @@ def soap_norm_LJ(pos, atoms_obj, sigma=2, eps=1 ,myAlphas=0, myBetas=0, rCut=10.
     pos_ini = atoms_obj.get_positions()
     pos = np.reshape(pos, pos_ini.shape)
     atoms_obj.set_positions(pos)
+    cost = cost_LJ_trunc(atoms_obj, sigma, eps, rCut, pbc)
     if pbc:
         mat = soaplite.get_periodic_soap_structure(atoms_obj, myAlphas, myBetas, rCut, NradBas, Lmax)
     else:
         mat = soaplite.get_soap_structure(atoms_obj, myAlphas, myBetas, rCut, NradBas, Lmax)
-    if showProgress:    
-        print(norm(mat)+cost_LJ(atoms_obj, sigma, eps)) # can be used to show progress, but slows down function calls somewhat
+    if showProgress:
+        print(norm(mat)+cost) # can be used to show progress, but slows down function calls somewhat
     if maximize:
-        return -norm(mat)+cost_LJ(atoms_obj, sigma, eps)
+        return -norm(mat)+cost
     else:
-        return norm(mat)+cost_LJ(atoms_obj, sigma, eps)
+        return norm(mat)+cost
         
 def svd_lp(pos, atoms_obj, order=2, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5, pbc=False, showProgress=False):
     # calculates and returns norm of singular-value-vector of SOAP-matrix, works similar to soap_norm
@@ -130,29 +131,30 @@ def show_res(atoms_obj, pos, sigma=1, eps=1, myAlphas=0, myBetas=0, rCut=10.0, N
     pos = np.reshape(pos, pos_ini.shape)
     atoms.set_positions(pos)
     if pbc:
-        mat = soaplite.get_periodic_soap_structure(atoms_obj, myAlphas, myBetas, rCut, NradBas, Lmax)
+        mat = soaplite.get_periodic_soap_structure(atoms, myAlphas, myBetas, rCut, NradBas, Lmax)
     else:
-        mat = soaplite.get_soap_structure(atoms_obj, myAlphas, myBetas, rCut, NradBas, Lmax)
+        mat = soaplite.get_soap_structure(atoms, myAlphas, myBetas, rCut, NradBas, Lmax)
     s = svd(mat.transpose(), full_matrices=False, compute_uv=False)
-    norm_b = norm_block(pos, atoms_obj, 2, 0.3, myAlphas, myBetas, rCut, NradBas, Lmax, pbc)
+    norm_b = norm_block(pos, atoms, 2, 0.3, myAlphas, myBetas, rCut, NradBas, Lmax, pbc)
     #print('Matrix norm: %f' %norm(mat))
     N = len(atoms.get_positions())*3
     print('Number of Atoms: %i' %(N/3))
-    dist = atoms_test.get_all_distances(mic=pbc)
+    dist = atoms.get_all_distances(mic=pbc)
     np.fill_diagonal(dist,10.0)
     amin = np.amin(dist)
+    cost = cost_LJ_trunc(atoms, sigma, eps, rCut, pbc)
     print('Minimal pair-distance: %f' %amin)
     print('Singular-Value norm: %f' %norm(s, ord=1))
     print('Full Matrix norm: %f' %norm(mat, ord=2))
     print('Block matrix norm: %f' %norm_b)
-    print('LJ-Cost: %f' %cost_LJ(atoms, sigma, eps))
+    print('LJ-Cost: %f' %cost)
     #p.matshow(mat)
     #p.semilogy(s)
     f, (ax1, ax2) = p.subplots(2, 1)
     ax1.matshow(mat)
     ax2.semilogy(s)
     view(atoms)
-    return(norm(mat, ord=2), ost_LJ(atoms, sigma, eps))
+    return(norm(mat, ord=2), cost)
     
 
     
@@ -186,8 +188,18 @@ def cost_LJ(atoms, sigma, eps):
     np.power(r, -6, out=r)
     return np.sum(r**2 - r)*4*eps
     
-    
-    
+def cost_LJ_trunc(atoms, sigma=1, eps=1, rCut=5, pbc=False):
+    if pbc:
+        r = atoms.get_all_distances(mic=True)
+        r.flatten()
+        r = r[(r != 0.0)]
+    else:
+        arr = atoms.get_positions()
+        r = sd.pdist(arr)
+    shift = np.power(rCut, -6)
+    r = r[(r < rCut)]
+    np.power(r/sigma, -6, out=r)
+    return np.sum(r**2 - r - shift**2 + shift)*4*eps
     
     
     
