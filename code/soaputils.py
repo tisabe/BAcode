@@ -158,17 +158,18 @@ def show_res(atoms_obj, pos, sigma=1, eps=1, myAlphas=0, myBetas=0, rCut=10.0, N
     
 
     
-def lim_overlap(atoms_obj, dmin=1.1):
+def lim_overlap_ran(atoms_obj, dmin, max_it=10000,seed=None):
     # tries to make atoms in the cell not overlap, by assigning new random position of atom inside cell. Minimum distance between atompairs is dmin
     obj = atoms_obj.copy()
     overlap = True
     cell = obj.get_cell()
     it = 0
+    np.random.seed(seed)
     #N = len(obj.get_atomic_numbers())
-    while(overlap and it < 1000):
+    while(overlap and it < max_it):
         dist = obj.get_all_distances(mic=True)
         #print(obj)
-        np.fill_diagonal(dist,10.0)
+        np.fill_diagonal(dist,1000.0)
         #print(np.amin(dist))
         if np.amin(dist) > dmin:
             overlap = False
@@ -180,6 +181,33 @@ def lim_overlap(atoms_obj, dmin=1.1):
             pos[index] = np.matmul(cell,ran_pos[index])
             obj.set_positions(pos)
             it = it + 1
+    if it >= 1000:
+        print('Maximum number of iterations (%i) to limit overlap exceeded' %max_it)
+    return obj
+
+def lim_overlap(atoms_obj, dmin, max_it=10000,seed=None):
+    # makes atoms not overlap by setting the distance between the closest atoms and iterating on that, works better than the random algorithm but only up to 3.3A
+    obj = atoms_obj.copy()
+    overlap = True
+    cell = obj.get_cell()
+    it = 0
+    np.random.seed(seed)
+    #N = len(obj.get_atomic_numbers())
+    while(overlap and it < max_it):
+        dist = obj.get_all_distances(mic=True)
+        #print(obj)
+        np.fill_diagonal(dist,1000.0)
+        #print(np.amin(dist))
+        if np.amin(dist) > dmin:
+            overlap = False
+        else:
+            index = np.unravel_index(np.argmin(dist), np.shape(dist))
+            pos = obj.get_positions()
+            shape = pos.shape
+            obj.set_distance(index[0], index[1], dmin, mic=True)
+            it = it + 1
+    if it >= 1000:
+        print('Maximum number of iterations (%i) to limit overlap exceeded' %max_it)
     return obj
 
 def cost_LJ(atoms, sigma, eps):
