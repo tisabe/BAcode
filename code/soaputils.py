@@ -77,7 +77,7 @@ def soap_norm_LJ(pos, atoms_obj, sigma=2, eps=1 ,myAlphas=0, myBetas=0, rCut=10.
     else:
         return norm(mat)+cost
         
-def svd_lp(pos, atoms_obj, order=2, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5, pbc=False, showProgress=False):
+def svd_norm(pos, atoms_obj, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5, pbc=False, showProgress=False):
     # calculates and returns norm of singular-value-vector of SOAP-matrix, works similar to soap_norm
     # the order of the norm is 2 by default, but can be set in variable 'order'
     #if myAlphas.all() == 0 or myBetas.all() == 0:
@@ -91,9 +91,10 @@ def svd_lp(pos, atoms_obj, order=2, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5,
     else:
         mat = soaplite.get_soap_structure(atoms_obj, myAlphas, myBetas, rCut, NradBas, Lmax)
     s = svd(mat.transpose(), full_matrices=False, compute_uv=False)
+    res = norm(s,ord=1)/norm(s,ord=2)
     if showProgress:    
-        print(norm(s, ord=order)) # can be used to show progress, but slows down function calls somewhat
-    return  norm(s, ord=order)
+        print(res) # can be used to show progress, but slows down function calls somewhat
+    return res
 
 def norm_block(pos, atoms_obj, order=2, frac=0.3, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5, pbc=False, showProgress=False):
     # SOAP-matrix is divided into blocks depending on combination of atomic number. The norm of the last rows of the blocks is calculated (fraction of rows is put in with frac, so last 2/3 of rows would be frac = 1/3), rest works similar to soap_norm
@@ -121,7 +122,7 @@ def norm_block(pos, atoms_obj, order=2, frac=0.3, myAlphas=0, myBetas=0, rCut=10
         print(norm(mat0, ord=order)) # can be used to show progress, but slows down function calls somewhat
     return  norm(mat0, ord=order)
 
-def show_res(atoms_obj, pos, sigma=1, eps=1, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5, pbc=False):
+def show_res(atoms_obj, pos, sigma=1, eps=1, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5, pbc=False, calc_LJ=True):
     # shows the result of the minimization in form of the view from ase
     #if myAlphas.all() == 0 or myBetas.all() == 0:
     if myAlphas.all() or myBetas.all():
@@ -139,11 +140,15 @@ def show_res(atoms_obj, pos, sigma=1, eps=1, myAlphas=0, myBetas=0, rCut=10.0, N
     #print('Matrix norm: %f' %norm(mat))
     N = len(atoms.get_positions())*3
     print('Number of Atoms: %i' %(N/3))
+    if calc_LJ:
+        
+        cost = cost_LJ_trunc(atoms, sigma, eps, rCut, pbc)
+    else:
+        cost = 0
     dist = atoms.get_all_distances(mic=pbc)
     np.fill_diagonal(dist,10.0)
-    amin = np.amin(dist)
-    cost = cost_LJ_trunc(atoms, sigma, eps, rCut, pbc)
-    print('Minimal pair-distance: %f' %amin)
+    min_dist = np.amin(dist)
+    print('Minimal pair-distance: %f' %min_dist)
     print('Singular-Value norm: %f' %norm(s, ord=1))
     print('Full Matrix norm: %f' %norm(mat, ord=2))
     print('Block matrix norm: %f' %norm_b)
