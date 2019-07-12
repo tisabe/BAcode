@@ -234,8 +234,16 @@ def cost_LJ_trunc(atoms, sigma=1, eps=1, rCut=5, pbc=False):
     np.power(r/sigma, -6, out=r)
     return np.sum(r**2 - r - shift**2 + shift)*4*eps
     
-    
-    
+def gen_struct(Natoms, dens=0.03, length=None, Ntypes=1, dmin=0, seed=None):
+    struct = ase.Atoms('C')
+    if length == None:
+        length = np.power(Natoms/dens,1/3)
+    for i in range(Natoms-1):
+        struct.append(ase.atom.Atom('C',(0,0,0)))
+    struct.set_cell(np.diag((length,length,length)))
+    struct = rand_pos(struct,seed=seed)
+    struct = lim_overlap(struct,dmin=dmin)
+    return struct
     
     
     
