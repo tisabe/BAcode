@@ -122,6 +122,24 @@ def norm_block(pos, atoms_obj, order=2, frac=0.3, myAlphas=0, myBetas=0, rCut=10
         print(norm(mat0, ord=order)) # can be used to show progress, but slows down function calls somewhat
     return  norm(mat0, ord=order)
 
+def var_norm(pos, atoms_obj, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5, pbc=False, maximize=False, showProgress=False):
+    # calc
+    if myAlphas.all() == 0 or myBetas.all() == 0:
+        myAlphas, myBetas = genBasis.getBasisFunc(rCut, NradBas)
+    pos_ini = atoms_obj.get_positions()
+    pos = np.reshape(pos, pos_ini.shape)
+    atoms_obj.set_positions(pos)
+    if pbc:
+        mat = soaplite.get_periodic_soap_structure(atoms_obj, myAlphas, myBetas, rCut, NradBas, Lmax)
+    else:
+        mat = soaplite.get_soap_structure(atoms_obj, myAlphas, myBetas, rCut, NradBas, Lmax)
+    if showProgress:    
+        print(norm(mat)) # can be used to show progress, but slows down function calls somewhat
+    if maximize:
+        return -norm(np.var(mat,0))
+    else:
+        return norm(np.var(mat,0))
+
 def show_res(atoms_obj, pos, sigma=1, eps=1, myAlphas=0, myBetas=0, rCut=10.0, NradBas=5, Lmax=5, pbc=False, calc_LJ=True):
     # shows the result of the minimization in form of the view from ase
     #if myAlphas.all() == 0 or myBetas.all() == 0:
