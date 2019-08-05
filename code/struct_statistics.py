@@ -5,7 +5,6 @@ import numpy as np
 
 def computePPDF(struct,binSize=0.3,numBins=20, projectedAxis=None):
     '''The function computePPDF will compute the partial pair distribution function for the complete structure. 
-    It will be one aim of the optimization to make this partial PDF as sparse as possible.
     '''
     # First, we want to make sure that the cell has periodic boundary conditions.
     unit_cell = struct.get_cell() 
