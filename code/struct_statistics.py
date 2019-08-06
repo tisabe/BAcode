@@ -76,8 +76,17 @@ def computePPDF(struct,binSize=0.3,numBins=20, projectedAxis=None):
     # integrated over:
     if (projectedAxis != None):
         hist /= unit_cell[projectedAxis,projectedAxis]
+    distBins = 0.5*(hEdge[1:]+hEdge[0:-1])
 
-    return hist, dist, hEdge
+    return hist, distBins
+
+def computeRDF(struct,binSize=0.3,numBins=20):
+    hist, distBins = computePPDF(struct,binSize,numBins)
+    rho = density(struct)
+    dr = distBins[1]-distBins[0]
+    rhist = [hist[i]/(rho*4*np.pi*distBins[i]**2*dr) for i in np.arange(len(distBins))]
+    return rhist, distBins
+    
 
 def extractUniqueSymbols(struct):    
     sym = struct.get_chemical_symbols()
