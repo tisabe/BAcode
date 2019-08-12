@@ -20,7 +20,7 @@ def rand_pos(atoms_in, seed=None): # function to randomize atom positions. New p
     atoms.set_positions(pos)
     return atoms
 
-def limit_pos(atoms_obj): # funtion to delete atoms outside of unit cell, only works with orthorhombic cells (for now)
+def limit_pos(atoms_obj): # function to delete atoms outside of unit cell, only works with orthorhombic cells (for now)
     atoms = atoms_obj.copy()
     cell = atoms.get_cell()
     pos = atoms.get_positions()
@@ -32,7 +32,7 @@ def limit_pos(atoms_obj): # funtion to delete atoms outside of unit cell, only w
     while(i < N-1):
         pos = atoms.get_positions()
         N = np.shape(pos)[0]
-        if pos[i,0] > cell[0,0] or pos[i,1] > cell[1,1] or pos[i,2] > cell[2,2]:
+        if pos[i,0] > cell[0,0] or pos[i,1] > cell[1,1] or pos[i,2] > cell[2,2] or pos[i,0] < 0 or pos[i,1] < 0 or pos[i,2] < 0:
             atoms.pop(i)
         else:
             i = i + 1
@@ -263,7 +263,27 @@ def gen_struct(Natoms, dens=0.03, length=None, Ntypes=1, dmin=0, seed=None):
     struct = lim_overlap(struct,dmin=dmin)
     return struct
     
-    
+def ran_sample(struct0, cell_t, seed=None):
+    struct = struct0.copy()
+    cell_i = struct.get_cell()
+    xi = cell_i[0,0]
+    yi = cell_i[1,1]
+    zi = cell_i[2,2]
+    xt = cell_t[0]
+    yt = cell_t[1]
+    zt = cell_t[2]
+    xoff = xi - xt
+    yoff = yi - yt
+    zoff = zi - zt
+    pos_fac = [xi-xt, yi-yt, zi-zt]
+    pos = struct.get_positions()
+    np.random.seed(seed)
+    pos_off = np.multiply(np.random.random_sample(3),pos_fac)
+    pos = np.add(pos,-1*pos_off)
+    struct.set_positions(pos)
+    struct.set_cell(cell_t)
+    struct = limit_pos(struct)
+    return struct
     
     
     
