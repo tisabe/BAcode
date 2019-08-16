@@ -6,7 +6,7 @@ import soaputils as su
 import scipy.optimize as op
 import time
 
-Natoms = 100
+Natoms = 150
 atoms = su.gen_struct(Natoms, seed=50)
 
 rCut = 10
@@ -35,4 +35,4 @@ atoms_res.set_positions(np.reshape(xopt,(-1,3)))
 f = open("res_structs/log_run_large.txt","a")
 f.write(" nit: " + str(nit) + " nfev: " + str(nfev) + " t: " + str(dt) + " msg: " + str(msg) + "\n")
 f.close()
-ase.io.write("res_structs/C100.cfg", atoms_res)
+ase.io.write("res_structs/C150.cfg", atoms_res)
