@@ -32,7 +32,6 @@ atoms_res = atoms.copy()
 atoms_res.set_positions(np.reshape(xopt,(-1,3)))
 
 # the resulting struct is saved in a folder
-filename = "batch" + "l" + str(l_list[i]) + "n" + str(n_list[i]) + "r" + str(r_list[i]) + ".cfg"
 f = open("res_structs/log_run_large.txt","a")
 f.write(" nit: " + str(nit) + " nfev: " + str(nfev) + " t: " + str(dt) + " msg: " + str(msg) + "\n")
 f.close()
