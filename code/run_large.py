@@ -33,6 +33,6 @@ atoms_res.set_positions(np.reshape(xopt,(-1,3)))
 
 # the resulting struct is saved in a folder
 f = open("res_structs/log_run_large.txt","a")
-f.write(" nit: " + str(nit) + " nfev: " + str(nfev) + " t: " + str(dt) + " msg: " + str(msg) + "\n")
+f.write("N: " + str(Natoms) + " nit: " + str(nit) + " nfev: " + str(nfev) + " t: " + str(dt) + " msg: " + str(msg) + "\n")
 f.close()
 ase.io.write("res_structs/C150.cfg", atoms_res)
