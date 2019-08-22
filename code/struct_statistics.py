@@ -1,5 +1,6 @@
 import ase
 import numpy as np
+from ase.neighborlist import neighbor_list
 
 
 
@@ -86,6 +87,13 @@ def computeRDF(struct,binSize=0.3,numBins=20):
     dr = distBins[1]-distBins[0]
     rhist = [hist[i]/(rho*4*np.pi*distBins[i]**2*dr) for i in np.arange(len(distBins))]
     return rhist, distBins
+
+def simpleRDF(struct,numBins=100,rCut=10):
+    d = neighbor_list('d', struct, rCut)
+    h, bin_edges = np.histogram(d, bins=numBins)
+    rdf = h/(4*np.pi/3*(bin_edges[1:]**3 - bin_edges[:-1]**3)) * struct.get_volume()/len(struct)**2
+    distBins = 0.5*(bin_edges[1:]+bin_edges[:-1])
+    return rdf, distBins
     
 
 def extractUniqueSymbols(struct):    
