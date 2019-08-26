@@ -90,7 +90,7 @@ def computeRDF(struct,binSize=0.3,numBins=20):
 
 def simpleRDF(struct,numBins=100,rCut=10):
     d = neighbor_list('d', struct, rCut)
-    h, bin_edges = np.histogram(d, bins=numBins)
+    h, bin_edges = np.histogram(d, bins=numBins, range=(0,d.max()))
     rdf = h/(4*np.pi/3*(bin_edges[1:]**3 - bin_edges[:-1]**3)) * struct.get_volume()/len(struct)**2
     distBins = 0.5*(bin_edges[1:]+bin_edges[:-1])
     return rdf, distBins
